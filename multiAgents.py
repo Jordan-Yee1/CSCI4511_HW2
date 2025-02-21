@@ -169,59 +169,74 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
-        #print("Num agents ", gameState.getNumAgents())
-        value, action = self.max_value(gameState, 0) #(gamestate, current depth)
-        print(value, action)
+       # print("Num agents ", gameState.getNumAgents())
+        value, action = self.max_value(gameState, 1) #(gamestate, current depth)
+     #   print(value, action)
         return action
         #each iteration, max value gets pacman moves, then chains to min values of ghost moves
         #Then it will send the best action, get sucessor of that and send it to max value again 
     def max_value(self, gameState: GameState, curr_depth):
-        
+        if gameState.isLose():
+            #    print("min lose")
+            return  self.evaluationFunction(gameState), None#If this game state loses the game dont keep exploring
+        if gameState.isWin():
+            #    print("min win")
+            return self.evaluationFunction(gameState), None #if game state wins, do this, dont need to keep exploring
+           
         best_value = float('-inf')
         best_action = None
         for action in gameState.getLegalActions(0):
             value, ghost_action = self.min_value(gameState.generateSuccessor(0, action), 1, curr_depth) #Next game state after pacman, (The state after agent makes move, next agent)
-         #   print(value)
+          #  print("max val ", value)
             if value > best_value:
                 best_value = value
                 best_action = action
         return best_value, best_action
             
     def min_value(self, gameState: GameState, agent_idx, curr_depth):
-        #Need to figure out how to add action  to this, do I have to ?
-        #if gameState.isLose():
-         #   return -1 #If this game state loses the game dont keep exploring
-        #if gameState.isWin():
-         #   return float('inf') #if game state wins, do this, dont need to keep exploring
-            
         #yea im sure there is a cleaner way to write this, but im booted off two cups of coffee and do not really care
         #Should only trigger at the end of the ply, and since the ghosts go last per ply we add this here
         lowest_value = float('inf')
         lowest_action = None
         
         if agent_idx == gameState.getNumAgents()-1: #-1 because agent_idx is zero indexed but num agents presumeably is not
+
+            if gameState.isLose():
+            #    print("min lose")
+                return  self.evaluationFunction(gameState), None#If this game state loses the game dont keep exploring
+            if gameState.isWin():
+            #    print("min win")
+                return self.evaluationFunction(gameState), None #if game state wins, do this, dont need to keep exploring
+           
             curr_depth += 1 #End of ply reached
+          #  print("curr_depth " , curr_depth, "  set depth ", self.depth)#Returning before last ghost makes move on ply 
+
             if curr_depth == self.depth:
-              #  print("curr_depth " , curr_depth, "  set depth ", self.depth)#Returning before last ghost makes move on ply 
                 #If end ghost of final ply, calculate the evaluation after the ghost makes its move
                 for action in gameState.getLegalActions(agent_idx):
-
                     value = self.evaluationFunction(gameState.generateSuccessor(agent_idx, action))   
+               #     print("end value", value)
                     if value < lowest_value:
                         lowest_value = value
-                      #  print(lowest_value)
-
                         lowest_action = action
-                     #   print(lowest_action)
             else: #else if end of ply but not depth, call max value to repeat process
+             #   print("Passed")
+
                 for action in gameState.getLegalActions(agent_idx):
                     value, pac_action = self.max_value(gameState.generateSuccessor(agent_idx, action), curr_depth)
                     if value < lowest_value:
                         lowest_value = value
                         lowest_action = action
         else: #Not the last ghost so call minimize again
-            #Calling get legal action for current agent then applying that to the next one which is wrong
+
             for action in gameState.getLegalActions(agent_idx):
+                if gameState.isLose():
+                #    print("min lose2")
+                    return  self.evaluationFunction(gameState.generateSuccessor(agent_idx, action)), None#If this game state loses the game dont keep exploring
+                if gameState.isWin():
+                #    print("min lose2")
+                    return self.evaluationFunction(gameState.generateSuccessor(agent_idx, action)), None #if game state wins, do this, dont need to keep exploring
+            
                 #+1 to increment agent index to next ghost 
                 value, ghost_action = self.min_value(gameState.generateSuccessor(agent_idx, action), agent_idx + 1, curr_depth) 
                 if value < lowest_value:
