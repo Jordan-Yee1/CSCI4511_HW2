@@ -233,7 +233,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        value, action = self.max_value(gameState, 0, 0, 0, 0) #(gamestate, current depth, agent, alpha, beta)
+        value, action = self.max_value(gameState, 0, 0, float('-inf'), float('inf')) #(gamestate, current depth, agent, alpha, beta)
         return action
     
     def max_value(self, gameState : GameState, curr_depth, agent_idx, alpha, beta):
@@ -242,27 +242,38 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         if gameState.isWin():
             return self.evaluationFunction(gameState), None #if game state wins, do this, dont need to keep exploring
 
-        best_value = float('-inf')
+        value = float('-inf')
         best_action = None
-        for action in gameState.getLegalActions(gameState, agent_idx):
-            value = max(best_value, self.min_value(gameState.generateSuccessor(agent_idx, action), agent_idx + 1, curr_depth))
+        for action in gameState.getLegalActions(agent_idx):
+            value = max(value, self.min_value(gameState.generateSuccessor(agent_idx, action), agent_idx + 1, curr_depth, alpha, beta))
             if value > beta:
+                best_action = action
                 return value
             alpha = max(alpha, value)
-        return value
+            best_action = action
+        return value, action
 
 
-    def min_value(self, gameState : GameState, curr_depth, agent_idx):
+    def min_value(self, gameState : GameState, curr_depth, agent_idx, alpha, beta):
         if gameState.isLose():
             return  self.evaluationFunction(gameState), None #If this game state loses the game dont keep exploring
         if gameState.isWin():
             return self.evaluationFunction(gameState), None #if game state wins, do this, dont need to keep exploring
         
-        lowest_value = float('inf')
-        lowest_action = None
+        value = float('inf')
+        for action in gameState.getLegalActions(agent_idx):
+            value = min(value, value(gameState.generateSuccessor(agent_idx, action), alpha, beta))
+            if value < alpha:
+                return value
+            beta = min(beta, value)
+        return value
 
         
-    def value(self, gameState : GameState, curr_depth, agent_idx):
+    def value(self, gameState : GameState, curr_depth, agent_idx, alpha, beta):
+        if agent_idx == gameState.getNumAgents()-1: #If the next agent is pacman, i.e. current agent is last agent
+            return self.max_value(gameState, alpha, beta)
+        return self.min_value(gameState, alpha, beta)
+    
 
 
 
