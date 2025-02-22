@@ -242,16 +242,18 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         if gameState.isWin():
             return self.evaluationFunction(gameState), None #if game state wins, do this, dont need to keep exploring
 
-        value = float('-inf')
+        best_value = float('-inf')
         best_action = None
         for action in gameState.getLegalActions(agent_idx):
-            value = max(value, self.min_value(gameState.generateSuccessor(agent_idx, action), agent_idx + 1, curr_depth, alpha, beta))
-            if value > beta:
+            ret_val = self.min_value(gameState.generateSuccessor(agent_idx, action), agent_idx + 1, curr_depth, alpha, beta) #ret val needed because max returns tuple but not min and we only care about value
+            print("min ", ret_val)
+            best_value = max(best_value, ret_val[0])
+            if best_value > beta:
                 best_action = action
-                return value
-            alpha = max(alpha, value)
+                return best_value, best_action
+            alpha = max(alpha, best_value)
             best_action = action
-        return value, action
+        return best_value, best_action
 
 
     def min_value(self, gameState : GameState, curr_depth, agent_idx, alpha, beta):
@@ -260,19 +262,20 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         if gameState.isWin():
             return self.evaluationFunction(gameState), None #if game state wins, do this, dont need to keep exploring
         
-        value = float('inf')
+        best_value = float('inf')
         for action in gameState.getLegalActions(agent_idx):
-            value = min(value, value(gameState.generateSuccessor(agent_idx, action), alpha, beta))
-            if value < alpha:
-                return value
-            beta = min(beta, value)
-        return value
+            ret_val = self.value(gameState.generateSuccessor(agent_idx, action), curr_depth, agent_idx, alpha, beta)
+            best_value = min(best_value, ret_val[0])
+            if best_value < alpha:
+                return best_value
+            beta = min(beta, best_value)
+        return best_value
 
         
     def value(self, gameState : GameState, curr_depth, agent_idx, alpha, beta):
         if agent_idx == gameState.getNumAgents()-1: #If the next agent is pacman, i.e. current agent is last agent
-            return self.max_value(gameState, alpha, beta)
-        return self.min_value(gameState, alpha, beta)
+            return self.max_value(gameState, curr_depth, agent_idx, alpha, beta)
+        return self.min_value(gameState, curr_depth, agent_idx, alpha, beta)
     
 
 
