@@ -210,7 +210,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 value, pac_action = self.max_value(gameState.generateSuccessor(agent_idx, action), 0, curr_depth + 1)
                 if value < lowest_value:
                     lowest_value = value
-                    value = action
+                    lowest_action = action
         else:
             for action in gameState.getLegalActions(agent_idx):
                 value, ghost_action = self.min_value(gameState.generateSuccessor(agent_idx, action), agent_idx + 1, curr_depth)
@@ -242,6 +242,9 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         if gameState.isWin():
             return self.evaluationFunction(gameState), None #if game state wins, do this, dont need to keep exploring
 
+        if curr_depth == self.depth:
+            return  self.evaluationFunction(gameState), None
+        
         best_value = float('-inf')
         best_action = None
         for action in gameState.getLegalActions(agent_idx):
@@ -262,14 +265,19 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         if gameState.isWin():
             return self.evaluationFunction(gameState), None #if game state wins, do this, dont need to keep exploring
         
-        best_value = float('inf')
+        worst_value = float('inf')
+        worst_action = None
+
+
+
         for action in gameState.getLegalActions(agent_idx):
             ret_val = self.value(gameState.generateSuccessor(agent_idx, action), curr_depth, agent_idx, alpha, beta)
-            best_value = min(best_value, ret_val[0])
-            if best_value < alpha:
-                return best_value
-            beta = min(beta, best_value)
-        return best_value
+            worst_value = min(worst_value, ret_val[0])
+            if worst_value < alpha:
+                worst_action = action
+                return worst_value, worst_action
+            beta = min(beta, worst_value)
+        return worst_value, worst_action
 
         
     def value(self, gameState : GameState, curr_depth, agent_idx, alpha, beta):
