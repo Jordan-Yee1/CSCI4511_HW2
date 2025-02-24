@@ -12,7 +12,7 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
-#Reference the textbook Artificial Inelligence A Modern Approach, Russel and Norvig - for minimax implementation
+#Reference the textbook Artificial Inelligence A Modern Approach, Russel and Norvig - for minimax & expectimax implementation
 
 
 from util import manhattanDistance
@@ -301,7 +301,56 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        value, action = self.max_value(gameState, 0, 0) #(gamestate, current depth, agent)
+        return action
+        #each iteration, max value gets pacman moves, then chains to min values of ghost moves
+        #Then it will send the best action, get sucessor of that and send it to max value again 
+    
+    
+    def max_value(self, gameState : GameState, agent_idx, curr_depth):
+        if gameState.isLose():
+            return  self.evaluationFunction(gameState), None#If this game state loses the game dont keep exploring
+        if gameState.isWin():
+            return self.evaluationFunction(gameState), None #if game state wins, do this, dont need to keep exploring
+
+        best_value = float('-inf')
+        best_action = None
+        
+        if curr_depth == self.depth:
+            return  self.evaluationFunction(gameState), None
+        else:
+            for action in gameState.getLegalActions(agent_idx):
+                value, ghost_action = self.chance_value(gameState.generateSuccessor(agent_idx, action), agent_idx + 1, curr_depth) #Next game state after pacman, (The state after agent makes move, next agent)
+                if value > best_value:
+                    best_value = value
+                    best_action = action
+            return best_value, best_action
+        
+    def chance_value(self, gameState : GameState, agent_idx, curr_depth):
+        if gameState.isLose():
+            return  self.evaluationFunction(gameState), None #If this game state loses the game dont keep exploring
+        if gameState.isWin():
+            return self.evaluationFunction(gameState), None #if game state wins, do this, dont need to keep exploring
+        
+        average_value = 0
+        #Instead of returning just values, return the weighted values of the get legal actions
+        if agent_idx == gameState.getNumAgents()-1: #-1 because agent_idx is zero indexed but num agents presumeably is not
+            for action in gameState.getLegalActions(agent_idx):
+                value, pac_action = self.max_value(gameState.generateSuccessor(agent_idx, action), 0, curr_depth + 1)
+                average_value +=  (1/len(gameState.getLegalActions(agent_idx))) * value
+        else:
+            for action in gameState.getLegalActions(agent_idx):
+                value, ghost_action = self.chance_value(gameState.generateSuccessor(agent_idx, action), agent_idx + 1, curr_depth)
+                average_value +=  (1/len(gameState.getLegalActions(agent_idx))) * value
+        return average_value, None
+    
+        
+# Games of chance can be handled by expectiminimax, an extension to the minimax 
+# algorithm that evaluates a chance node by taking the average utility of all its children,
+# weighted by the probability of each child.
+#(Russel and Norvig)
+
+
 
 def betterEvaluationFunction(currentGameState: GameState):
     """
